@@ -16,8 +16,6 @@ class SCV_Dumper:
         for item in items:
             if type(item) == str:
                 data.append(item)
-            elif type(item) == np.ndarray:
-                data.append(np.array2string(item, separator=", "))
             else:
                 data.append(str(item))
         return data

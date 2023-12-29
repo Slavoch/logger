@@ -18,7 +18,7 @@ class Logger:
             "kwargs",
         ]
         self._separator = "|"
-        self._supported_types = (int, np.ndarray, float, complex, str, list)
+        self._supported_types = (int, np.ndarray, float, complex, str, list, dict)
 
     def set_dump_cell(self, dump_queue: Queue):
         self._dump_queue = dump_queue
@@ -42,23 +42,25 @@ class Logger:
         # print(data)
         return data
 
-    def _validate(self, lst):
-        if type(lst) is tuple:
+    def _validate(self, data):
+        if type(data) is tuple:
             result = []
-            for item in lst:
-                if isinstance(item, self._supported_types):
-                    if type(item) == np.ndarray:
-                        result.append(item.tolist())
-                    else:
-                        result.append(item)
-                else:
-                    result.append(str(type(item)))
+            for item in data:
+                result.append(self._validate(item))
             return result
         else:
-            if isinstance(lst, self._supported_types):
-                return lst
+            if isinstance(data, self._supported_types):
+                if type(data) == np.ndarray:
+                    return data.tolist()
+                elif type(data) == dict:
+                    new_dict = {}
+                    for key in data:
+                        new_dict[key] = self._validate(data[key])
+                    return new_dict
+                else:
+                    return data
             else:
-                return str(type(lst))
+                return str(type(data))
 
     def dump(self, data: str):
         self._dump_queue.put(data)
@@ -101,7 +103,7 @@ class Logger:
 
     def get_logger_performance(self):
         print(
-            " max dump time {} [s]\n mean dump time {} [s]\n num calls {}\n".format(
+            " max logger time consumption {} [s]\n mean logger time consumption {} [s]\n total num calls {}\n".format(
                 self._perf_max.value,
                 self._perf_total.value / self._perf_num_calls.value,
                 self._perf_num_calls.value,
